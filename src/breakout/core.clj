@@ -1,7 +1,11 @@
 (ns breakout.core
+  (:require [util.window :as window])
   (:gen-class))
 
+(set! *warn-on-reflection* true)
+
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (let [context (window/create "Breakout" 800 600)]
+    (window/game-loop context)
+    (window/destroy)))
