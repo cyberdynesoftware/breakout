@@ -32,14 +32,20 @@
 (def vec3 (new Vector3f (float 0) (float 0) (float 0)))
 (def axis (new Vector3f (float 0) (float 0) (float 1)))
 
+(defn rotate-around
+  [model rotate x y]
+  (let [origin (.set vec3 (float (* x 0.5)) (float (* y 0.5)) (float 0))]
+    (.translate model origin)
+    (.rotate model (org.joml.Math/toRadians (float rotate)) axis)
+    (.translate model (.mul origin (float -1)))))
+
 (defn transform
   [model position rotate size]
   (.translation model position)
-
-  (.translate model (.set vec3 (float (* (.x size) 0.5)) (float (* (.y size) 0.5)) (float 0)))
-  (.rotate model (org.joml.Math/toRadians (float rotate)) axis)
-  (.translate model (.set vec3 (float (* (.x size) -0.5)) (float (* (.y size) -0.5)) (float 0)))
-
+  (rotate-around model rotate (.x size) (.y size))
+  ;(.translate model (.set vec3 (float (* (.x size) 0.5)) (float (* (.y size) 0.5)) (float 0)))
+  ;(.rotate model (org.joml.Math/toRadians (float rotate)) axis)
+  ;(.translate model (.set vec3 (float (* (.x size) -0.5)) (float (* (.y size) -0.5)) (float 0)))
   (.scale model size))
 
 (defn draw
