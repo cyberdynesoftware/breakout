@@ -1,6 +1,7 @@
 (ns util.window
   (:require [util.error :as error]
-            [util.input :as input])
+            [util.input :as input]
+            [breakout.game :as game])
   (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
@@ -29,7 +30,7 @@
     window))
 
 (defn game-loop
-  [window]
+  [window resources]
   (let [last-frame (atom 0)]
     (while (not (GLFW/glfwWindowShouldClose window))
       (let [now (GLFW/glfwGetTime)
@@ -39,6 +40,7 @@
         (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
         (GL33/glClear GL33/GL_COLOR_BUFFER_BIT)
 
+        (game/draw resources delta)
 
         (error/check-error)
 
