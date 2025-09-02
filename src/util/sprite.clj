@@ -53,7 +53,7 @@
   (let [shader (:shader sprite)]
     (GL33/glUseProgram shader)
     (shader/load-matrix shader "model" model)
-    (shader/load-vector3 shader "color" color)
+    (shader/load-vector3 shader "spriteColor" color)
 
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:texture sprite))
