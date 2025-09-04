@@ -20,13 +20,14 @@
     (shader/load-matrix (:sprite-shader resources) "projection" projection)
     (shader/load-int (:sprite-shader resources) "image" 0)
     {:resources (assoc resources :vertices vertices)
-     :face {:position (vector3f 200 200 0)
-            :size (vector3f 300 400 1)
-            :color (vector3f 0 1 0)}
      :background {:position (vector3f 0 0 0)
                   :size (vector3f width height 1)
                   :color (vector3f 1 1 1)}
-     :world (world/init (:standard-lvl resources) width (/ height 2))}))
+     :world (world/init (:standard-lvl resources) width (/ height 2))
+     :paddle {:position (vector3f (- (/ width 2) 50)
+                                  (- height 20) 0)
+              :size (vector3f 100 20 1)
+              :color (vector3f 1 1 1)}}))
 
 (def model (new Matrix4f))
 
@@ -49,12 +50,13 @@
     (draw-game-object (:background game) shader)
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :solid-brick]))
-    ;(println (count (get-in game [:world :solid-bricks])))
     (doseq [brick (get-in game [:world :solid-bricks])]
       (draw-game-object brick shader))
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :brick]))
-    ;(println (count (get-in game [:world :bricks])))
     (doseq [brick (get-in game [:world :bricks])]
       (draw-game-object brick shader))
+
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :paddle]))
+    (draw-game-object (:paddle game) shader)
     ))

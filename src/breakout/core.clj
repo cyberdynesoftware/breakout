@@ -5,9 +5,20 @@
 
 (set! *warn-on-reflection* true)
 
+(def num-stack-trace 3)
+
 (defn -main
   [& args]
   (let [context (window/create "Breakout" 800 600)
         resources (game/init 800 600)]
-    (window/game-loop context resources)
-    (window/destroy)))
+    (try (window/game-loop context resources)
+         (catch Exception e
+           (println " = EXECUTION ERROR =")
+           (println (.toString e))
+           (doseq [stack-trace-element (take num-stack-trace (.getStackTrace e))]
+             (println (format " - %s: %s (%s:%d)"
+                              (.getClassName stack-trace-element)
+                              (.getMethodName stack-trace-element)
+                              (.getFileName stack-trace-element)
+                              (.getLineNumber stack-trace-element)))))
+         (finally (window/destroy)))))

@@ -30,22 +30,22 @@
     window))
 
 (defn game-loop
-  [window resources]
+  [window game]
   (let [last-frame (atom 0)]
     (while (not (GLFW/glfwWindowShouldClose window))
       (let [now (GLFW/glfwGetTime)
             delta (- now @last-frame)]
         (reset! last-frame now)
+        (GLFW/glfwPollEvents)
 
         (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
         (GL33/glClear GL33/GL_COLOR_BUFFER_BIT)
 
-        (game/draw resources delta)
+        (game/draw game delta)
 
         (error/check-error)
 
-        (GLFW/glfwSwapBuffers window)
-        (GLFW/glfwPollEvents)))))
+        (GLFW/glfwSwapBuffers window)))))
 
 (defn destroy
   []

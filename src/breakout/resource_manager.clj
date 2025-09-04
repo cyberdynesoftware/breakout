@@ -10,4 +10,5 @@
    :background (tex/load-image "resources/assets/background.jpg")
    :brick (tex/load-image "resources/assets/block.png")
    :solid-brick (tex/load-image "resources/assets/block_solid.png")
+   :paddle (tex/load-image "resources/assets/paddle.png")
    :standard-lvl (slurp "resources/levels/standard.lvl")})
