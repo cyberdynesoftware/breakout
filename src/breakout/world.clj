@@ -20,15 +20,10 @@
                    (/ height (:rows dimen))
                    1)})
 
-(defmacro assoc-conj
-  "conjoin to a collection inside a map"
-  [m k v]
-  (list assoc m k (list conj (list get m k) v)))
-
 (defn update-game-objects
   [objs col-key brick color]
   (-> objs
-      (assoc-conj col-key (assoc brick :color color))
+      (update col-key conj (assoc brick :color color))
       (update-in [:temp :x] inc)))
 
 (defn init
