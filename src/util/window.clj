@@ -27,6 +27,9 @@
 
     (GLFW/glfwSetKeyCallback window input/key-callback)
     (GLFW/glfwSetFramebufferSizeCallback window window-resize-callback)
+    
+    (GL33/glEnable GL33/GL_BLEND)
+    (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE_MINUS_SRC_ALPHA)
     window))
 
 (defn game-loop
