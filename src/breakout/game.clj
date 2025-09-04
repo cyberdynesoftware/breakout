@@ -1,5 +1,6 @@
 (ns breakout.game
   (:require [breakout.resource-manager :as rm]
+            [breakout.world :as world]
             [util.shader :as shader]
             [util.sprite :as sprite])
   (:import [org.joml Matrix4f Vector3f]
@@ -24,7 +25,8 @@
             :color (vector3f 0 1 0)}
      :background {:position (vector3f 0 0 0)
                   :size (vector3f width height 1)
-                  :color (vector3f 1 1 1)}}))
+                  :color (vector3f 1 1 1)}
+     :world (world/init (:standard-lvl resources) width (/ height 2))}))
 
 (def model (new Matrix4f))
 
@@ -44,4 +46,15 @@
     (GL33/glBindVertexArray (get-in game [:resources :vertices]))
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :background]))
-    (draw-game-object (:background game) shader)))
+    (draw-game-object (:background game) shader)
+
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :solid-brick]))
+    ;(println (count (get-in game [:world :solid-bricks])))
+    (doseq [brick (get-in game [:world :solid-bricks])]
+      (draw-game-object brick shader))
+
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :brick]))
+    ;(println (count (get-in game [:world :bricks])))
+    (doseq [brick (get-in game [:world :bricks])]
+      (draw-game-object brick shader))
+    ))
