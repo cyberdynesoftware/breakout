@@ -2,7 +2,8 @@
   (:require [breakout.resource-manager :as rm]
             [breakout.world :as world]
             [util.shader :as shader]
-            [util.sprite :as sprite])
+            [util.sprite :as sprite]
+            [util.input :as input])
   (:import [org.joml Matrix4f Vector3f]
            [org.lwjgl.opengl GL33]))
 
@@ -20,6 +21,8 @@
     (shader/load-matrix (:sprite-shader resources) "projection" projection)
     (shader/load-int (:sprite-shader resources) "image" 0)
     {:resources (assoc resources :vertices vertices)
+     :display {:width width
+               :height height}
      :background {:position (vector3f 0 0 0)
                   :size (vector3f width height 1)
                   :color (vector3f 1 1 1)}
@@ -28,6 +31,20 @@
                                   (- height 20) 0)
               :size (vector3f 100 20 1)
               :color (vector3f 1 1 1)}}))
+
+(defn update-game
+  [game delta]
+  (let [velocity (float (* 500 delta))
+        paddle (get-in game [:paddle :position])
+        right-limit (float (- (get-in game [:display :width]) (.x (get-in game [:paddle :size]))))]
+    (when (:move-left @input/controls)
+      (.sub paddle velocity (float 0) (float 0))
+      (when (< (.x paddle) 0)
+        (.set paddle (float 0) (.y paddle) (.z paddle))))
+    (when (:move-right @input/controls)
+      (.add paddle velocity (float 0) (float 0))
+      (when (> (.x paddle) right-limit)
+        (.set paddle right-limit (.y paddle) (.z paddle))))))
 
 (def model (new Matrix4f))
 
@@ -58,5 +75,4 @@
       (draw-game-object brick shader))
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :paddle]))
-    (draw-game-object (:paddle game) shader)
-    ))
+    (draw-game-object (:paddle game) shader)))

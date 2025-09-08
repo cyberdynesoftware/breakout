@@ -44,6 +44,7 @@
         (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
         (GL33/glClear GL33/GL_COLOR_BUFFER_BIT)
 
+        (game/update-game game delta)
         (game/draw game delta)
 
         (error/check-error)
