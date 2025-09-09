@@ -25,30 +25,35 @@
                   :size (vector3f width height 1)
                   :color (vector3f 1 1 1)}
      :world (world/init (:standard-lvl resources) width height)
-     :paddle {:position (vector3f (- (/ width 2) 50)
-                                  (- height 20) 0)
+     :paddle {:position (vector3f (- (/ width 2) 50) (- height 20) 0)
               :size (vector3f 100 20 1)
               :color (vector3f 1 1 1)}
      :ball {:radius 12.5
-            :stuck (atom false)
-            :position (vector3f (- (/ width 2) 12.5)
-                                (- height 20 25) 0)
+            :stuck (atom true)
+            :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
             :size (vector3f 25 25 1)
             :color (vector3f 1 1 1)}}))
 
 (defn update-game
   [game delta]
   (let [velocity (float (* 500 delta))
-        paddle (get-in game [:paddle :position])
-        right-limit (float (- (get-in game [:world :size :width]) (.x (get-in game [:paddle :size]))))]
+        paddle-position (get-in game [:paddle :position])
+        paddle-width (.x (get-in game [:paddle :size]))
+        right-limit (float (- (get-in game [:world :size :width]) paddle-width))
+        radius (get-in game [:ball :radius])]
     (when (:move-left @input/controls)
-      (.sub paddle velocity (float 0) (float 0))
-      (when (< (.x paddle) 0)
-        (.set paddle (float 0) (.y paddle) (.z paddle))))
+      (.sub paddle-position velocity (float 0) (float 0))
+      (when (< (.x paddle-position) 0)
+        (.setComponent paddle-position (int 0) (float 0))))
     (when (:move-right @input/controls)
-      (.add paddle velocity (float 0) (float 0))
-      (when (> (.x paddle) right-limit)
-        (.set paddle right-limit (.y paddle) (.z paddle))))))
+      (.add paddle-position velocity (float 0) (float 0))
+      (when (> (.x paddle-position) right-limit)
+        (.setComponent paddle-position (int 0) right-limit)))
+    (if @(get-in game [:ball :stuck])
+      (.set (get-in game [:ball :position])
+            (float (+ (.x paddle-position) (- (/ paddle-width 2) radius)))
+            (float (- (.y paddle-position) (* radius 2)))
+            (float 0)))))
 
 (def model (new Matrix4f))
 

@@ -5,7 +5,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def num-stack-trace 3)
+(def num-stack-trace 8)
 
 (defn -main
   [& args]
