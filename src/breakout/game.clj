@@ -21,22 +21,26 @@
     (shader/load-matrix (:sprite-shader resources) "projection" projection)
     (shader/load-int (:sprite-shader resources) "image" 0)
     {:resources (assoc resources :vertices vertices)
-     :display {:width width
-               :height height}
      :background {:position (vector3f 0 0 0)
                   :size (vector3f width height 1)
                   :color (vector3f 1 1 1)}
-     :world (world/init (:standard-lvl resources) width (/ height 2))
+     :world (world/init (:standard-lvl resources) width height)
      :paddle {:position (vector3f (- (/ width 2) 50)
                                   (- height 20) 0)
               :size (vector3f 100 20 1)
-              :color (vector3f 1 1 1)}}))
+              :color (vector3f 1 1 1)}
+     :ball {:radius 12.5
+            :stuck (atom false)
+            :position (vector3f (- (/ width 2) 12.5)
+                                (- height 20 25) 0)
+            :size (vector3f 25 25 1)
+            :color (vector3f 1 1 1)}}))
 
 (defn update-game
   [game delta]
   (let [velocity (float (* 500 delta))
         paddle (get-in game [:paddle :position])
-        right-limit (float (- (get-in game [:display :width]) (.x (get-in game [:paddle :size]))))]
+        right-limit (float (- (get-in game [:world :size :width]) (.x (get-in game [:paddle :size]))))]
     (when (:move-left @input/controls)
       (.sub paddle velocity (float 0) (float 0))
       (when (< (.x paddle) 0)
@@ -75,4 +79,7 @@
       (draw-game-object brick shader))
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :paddle]))
-    (draw-game-object (:paddle game) shader)))
+    (draw-game-object (:paddle game) shader)
+
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :face]))
+    (draw-game-object (:ball game) shader)))

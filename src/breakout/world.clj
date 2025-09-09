@@ -28,22 +28,23 @@
 
 (defn init
   [lvl width height]
-  (let [dimen (dimen lvl)
-        result (reduce (fn [result item]
-                         (let [x (get-in result [:temp :x])
-                               y (get-in result [:temp :y])
-                               brick (brick width height dimen x y)]
-                           (condp = item
-                             \newline (assoc result :temp {:x 0 :y (inc y)})
-                             \0 (update-in result [:temp :x] inc)
-                             \1 (update-game-objects result :solid-bricks brick (vector3f 1 1 1))
-                             \2 (update-game-objects result :bricks brick (vector3f 0.2 0.6 1))
-                             \3 (update-game-objects result :bricks brick (vector3f 0 0.7 0))
-                             \4 (update-game-objects result :bricks brick (vector3f 0.8 0.8 0.4))
-                             \5 (update-game-objects result :bricks brick (vector3f 1 0.5 0))
-                             result)))
-                       {:bricks []
-                        :solid-bricks []
-                        :temp {:x 0 :y 0}}
-                       lvl)]
-    (dissoc result :temp)))
+  (let [dimen (dimen lvl)]
+    (-> (reduce (fn [result item]
+                  (let [x (get-in result [:temp :x])
+                        y (get-in result [:temp :y])
+                        brick (brick width (/ height 2) dimen x y)]
+                    (condp = item
+                      \newline (assoc result :temp {:x 0 :y (inc y)})
+                      \0 (update-in result [:temp :x] inc)
+                      \1 (update-game-objects result :solid-bricks brick (vector3f 1 1 1))
+                      \2 (update-game-objects result :bricks brick (vector3f 0.2 0.6 1))
+                      \3 (update-game-objects result :bricks brick (vector3f 0 0.7 0))
+                      \4 (update-game-objects result :bricks brick (vector3f 0.8 0.8 0.4))
+                      \5 (update-game-objects result :bricks brick (vector3f 1 0.5 0))
+                      result)))
+                {:bricks []
+                 :solid-bricks []
+                 :temp {:x 0 :y 0}}
+                lvl)
+        (dissoc :temp)
+        (assoc :size {:width width :height height}))))
