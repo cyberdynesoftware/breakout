@@ -1,6 +1,6 @@
 (ns util.window
   (:require [util.error :as error]
-            [util.input :as input]
+            [breakout.input :as input]
             [breakout.game :as game])
   (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
            [org.lwjgl.opengl GL GL33]
@@ -34,11 +34,11 @@
 
 (defn game-loop
   [window game]
-  (let [last-frame (atom 0)]
+  (let [last-frame (volatile! (GLFW/glfwGetTime))]
     (while (not (GLFW/glfwWindowShouldClose window))
       (let [now (GLFW/glfwGetTime)
             delta (- now @last-frame)]
-        (reset! last-frame now)
+        (vreset! last-frame now)
         (GLFW/glfwPollEvents)
 
         (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))

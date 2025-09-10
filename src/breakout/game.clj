@@ -3,7 +3,7 @@
             [breakout.world :as world]
             [util.shader :as shader]
             [util.sprite :as sprite]
-            [util.input :as input])
+            [breakout.input :as input])
   (:import [org.joml Matrix4f Vector3f]
            [org.lwjgl.opengl GL33]))
 
@@ -17,6 +17,7 @@
         projection (doto (new Matrix4f)
                      (.ortho2D (float 0) (float width) (float height) (float 0)))
         vertices (sprite/vertices)]
+    (reset! input/controls input/default)
     (GL33/glUseProgram (:sprite-shader resources))
     (shader/load-matrix (:sprite-shader resources) "projection" projection)
     (shader/load-int (:sprite-shader resources) "image" 0)
@@ -29,31 +30,56 @@
               :size (vector3f 100 20 1)
               :color (vector3f 1 1 1)}
      :ball {:radius 12.5
-            :stuck (atom true)
+            :velocity (vector3f 100 -350 0)
             :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
             :size (vector3f 25 25 1)
             :color (vector3f 1 1 1)}}))
 
+(defn move-paddle
+  [paddle delta right-limit]
+  (let [velocity (float (* 500 delta))]
+    (when (:move-left @input/controls)
+      (.sub (:position paddle) velocity (float 0) (float 0))
+      (when (< (.x (:position paddle)) 0)
+        (.setComponent (:position paddle) (int 0) (float 0))))
+    (when (:move-right @input/controls)
+      (.add (:position paddle) velocity (float 0) (float 0))
+      (when (> (.x (:position paddle)) right-limit)
+        (.setComponent (:position paddle) (int 0) right-limit)))))
+
+(def velocity (vector3f 0 0 0))
+
+(defn move-ball
+  [ball delta world-width]
+  (let [right-limit (float (- world-width (* (:radius ball) 2)))]
+    (.mul (:velocity ball) (float delta) velocity)
+    (.add (:position ball) velocity)
+
+    (when (< (.x (:position ball)) 0)
+      (.setComponent (:position ball) (int 0) (float 0))
+      (.setComponent (:velocity ball) (int 0) (float (- (.x (:velocity ball))))))
+
+    (when (> (.x (:position ball)) right-limit)
+      (.setComponent (:position ball) (int 0) right-limit)
+      (.setComponent (:velocity ball) (int 0) (float (- (.x (:velocity ball))))))
+
+    (when (< (.y (:position ball)) 0)
+      (.setComponent (:position ball) (int 1) (float 0))
+      (.setComponent (:velocity ball) (int 1) (float (- (.y (:velocity ball))))))))
+
 (defn update-game
   [game delta]
-  (let [velocity (float (* 500 delta))
-        paddle-position (get-in game [:paddle :position])
-        paddle-width (.x (get-in game [:paddle :size]))
-        right-limit (float (- (get-in game [:world :size :width]) paddle-width))
-        radius (get-in game [:ball :radius])]
-    (when (:move-left @input/controls)
-      (.sub paddle-position velocity (float 0) (float 0))
-      (when (< (.x paddle-position) 0)
-        (.setComponent paddle-position (int 0) (float 0))))
-    (when (:move-right @input/controls)
-      (.add paddle-position velocity (float 0) (float 0))
-      (when (> (.x paddle-position) right-limit)
-        (.setComponent paddle-position (int 0) right-limit)))
-    (if @(get-in game [:ball :stuck])
-      (.set (get-in game [:ball :position])
-            (float (+ (.x paddle-position) (- (/ paddle-width 2) radius)))
-            (float (- (.y paddle-position) (* radius 2)))
-            (float 0)))))
+  (let [paddle-width (.x (get-in game [:paddle :size]))
+        world-width (get-in game [:world :size :width])
+        ball (:ball game)]
+    (move-paddle (:paddle game)
+                 delta
+                 (float (- world-width paddle-width)))
+    (if (:ball-stuck @input/controls)
+      (.setComponent (:position ball)
+                     (int 0)
+                     (float (+ (.x (get-in game [:paddle :position])) (- (/ paddle-width 2) (:radius ball)))))
+      (move-ball ball delta world-width))))
 
 (def model (new Matrix4f))
 
