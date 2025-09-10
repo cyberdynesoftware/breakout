@@ -2,8 +2,10 @@
   (:import [org.lwjgl.opengl GL33]
            [org.lwjgl.system MemoryStack]))
 
+(set! *warn-on-reflection* true)
+
 (defn compile-shader
-  [shader-type source]
+  [shader-type ^String source]
   (let [shader (GL33/glCreateShader shader-type)]
     (GL33/glShaderSource shader source)
     (GL33/glCompileShader shader)
@@ -35,17 +37,17 @@
     shader-program))
 
 (defn load-matrix
-  [shader-program location-id matrix]
+  [shader-program location-id ^org.joml.Matrix4f matrix]
   (with-open [stack (MemoryStack/stackPush)]
     (GL33/glUniformMatrix4fv
-      (GL33/glGetUniformLocation shader-program location-id)
+      (GL33/glGetUniformLocation ^int shader-program ^String location-id)
       false
       (.get matrix (.mallocFloat stack 16)))))
 
 (defn load-vector3
-  [shader-program location-id vector3]
+  [shader-program location-id ^org.joml.Vector3f vector3]
   (GL33/glUniform3f
-    (GL33/glGetUniformLocation shader-program location-id)
+    (GL33/glGetUniformLocation ^int shader-program ^String location-id)
     (.x vector3)
     (.y vector3)
     (.z vector3)))
@@ -53,7 +55,7 @@
 (defn load-float3
   [shader-program location-id x y z]
   (GL33/glUniform3f
-    (GL33/glGetUniformLocation shader-program location-id)
+    (GL33/glGetUniformLocation ^int shader-program ^String location-id)
     (float x)
     (float y)
     (float z)))
@@ -61,11 +63,11 @@
 (defn load-float1
   [shader-program location-id value]
   (GL33/glUniform1f
-    (GL33/glGetUniformLocation shader-program location-id)
+    (GL33/glGetUniformLocation ^int shader-program ^String location-id)
     (float value)))
 
 (defn load-int
   [shader-program location-id value]
   (GL33/glUniform1i
-    (GL33/glGetUniformLocation shader-program location-id)
+    (GL33/glGetUniformLocation ^int shader-program ^String location-id)
     (int value)))

@@ -7,6 +7,8 @@
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
 
+(set! *warn-on-reflection* true)
+
 (def window-resize-callback
   (reify GLFWFramebufferSizeCallbackI
     (invoke [_ _ x y]
@@ -20,7 +22,7 @@
   (GLFW/glfwWindowHint GLFW/GLFW_OPENGL_PROFILE GLFW/GLFW_OPENGL_CORE_PROFILE)
   (GLFW/glfwWindowHint GLFW/GLFW_RESIZABLE GLFW/GLFW_FALSE)
 
-  (let [window (GLFW/glfwCreateWindow width height title MemoryUtil/NULL MemoryUtil/NULL)]
+  (let [window (GLFW/glfwCreateWindow ^int width ^int height ^String title MemoryUtil/NULL MemoryUtil/NULL)]
     (GLFW/glfwMakeContextCurrent window)
     (GL/createCapabilities)
     (println (format "OpenGL version: %s (%s)" (GL33/glGetString GL33/GL_VERSION) (GL33/glGetString GL33/GL_VENDOR)))

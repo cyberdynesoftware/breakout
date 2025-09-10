@@ -15,7 +15,7 @@
          (catch Exception e
            (println " = EXECUTION ERROR =")
            (println (.toString e))
-           (doseq [stack-trace-element (take num-stack-trace (.getStackTrace e))]
+           (doseq [^java.lang.StackTraceElement stack-trace-element (take num-stack-trace (.getStackTrace e))]
              (println (format " - %s: %s (%s:%d)"
                               (.getClassName stack-trace-element)
                               (.getMethodName stack-trace-element)

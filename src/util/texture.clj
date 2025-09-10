@@ -3,18 +3,20 @@
            [org.lwjgl.stb STBImage]
            [org.lwjgl BufferUtils]))
 
+(set! *warn-on-reflection* true)
+
 (defn load-texture
-  [width height channels data]
+  [width height channels ^java.nio.ByteBuffer data]
   (assert channels)
   (let [texture (GL33/glGenTextures)]
     (GL33/glBindTexture GL33/GL_TEXTURE_2D texture)
     (GL33/glTexImage2D GL33/GL_TEXTURE_2D
                        0
-                       channels
-                       width
-                       height
+                       ^int channels
+                       ^int width
+                       ^int height
                        0
-                       channels
+                       ^int channels
                        GL33/GL_UNSIGNED_BYTE
                        data)
     ;(GL33/glGenerateMipmap GL33/GL_TEXTURE_2D)
@@ -25,7 +27,7 @@
     texture))
 
 (defn load-image
-  [path]
+  [^String path]
   ;(STBImage/stbi_set_flip_vertically_on_load true)
   (let [width (BufferUtils/createIntBuffer 1)
         height (BufferUtils/createIntBuffer 1)

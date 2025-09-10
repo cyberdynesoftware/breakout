@@ -2,6 +2,8 @@
   (:require [util.shader :as shader]
             [util.texture :as tex]))
 
+(set! *warn-on-reflection* true)
+
 (defn init
   []
   {:sprite-shader (shader/create-shader-program (slurp "resources/shader/sprite.vert")

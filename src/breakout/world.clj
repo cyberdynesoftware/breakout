@@ -1,6 +1,8 @@
 (ns breakout.world
   (:import [org.joml Vector3f]))
 
+(set! *warn-on-reflection* true)
+
 (defn dimen
   [lvl]
   (let [lines (clojure.string/split-lines lvl)]

@@ -1,6 +1,8 @@
 (ns breakout.input
   (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI]))
 
+(set! *warn-on-reflection* true)
+
 (def default {:move-left false
               :move-right false
               :ball-stuck true})
