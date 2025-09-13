@@ -83,10 +83,40 @@
          (and (>= (+ (.y p1) (.y s1)) (.y p2))
               (>= (+ (.y p2) (.y s2)) (.y p1))))))
 
+(def ball-center (new Vector3f))
+(def brick-half-size (new Vector3f))
+(def brick-center (new Vector3f))
+(def center-distance (new Vector3f))
+(def clamped (new Vector3f))
+
+(defn clamp
+  [^org.joml.Vector3f value
+   ^org.joml.Vector3f clamp-value
+   ^org.joml.Vector3f dest]
+  (.set dest
+        (org.joml.Math/clamp (.x value) (float (- (.x clamp-value))) (.x clamp-value))
+        (org.joml.Math/clamp (.y value) (float (- (.y clamp-value))) (.y clamp-value))
+        (org.joml.Math/clamp (.z value) (float (- (.z clamp-value))) (.z clamp-value))))
+
+(defn ball-collision?
+  [ball brick]
+  (let [^org.joml.Vector3f ball-pos (:position ball)
+        ^org.joml.Vector3f brick-pos (:position brick)
+        ^org.joml.Vector3f brick-size (:size brick)
+        radius (float (:radius ball))
+        ball-center (.add ball-pos radius radius (float 0) ball-center)
+        brick-half-size (.div brick-size brick (float 2) brick-half-size)
+        brick-center (.add brick-pos brick brick-half-size brick-center)
+        center-distance (.sub ball-center brick-center center-distance)
+        clamped (clamp center-distance brick-half-size clamped)
+        closest (.add brick-center clamped)
+        distance (.sub ball-center closest)]
+    (< (.length distance) radius)))
+
 (defn check-collisions
   [game]
   (update-in game [:world :bricks]
-             (fn [bricks] (filter #(not (aabb-collision? (:ball game) %)) bricks))))
+             (fn [bricks] (filter #(not (ball-collision? (:ball game) %)) bricks))))
 
 (defn update-game
   [game delta]
