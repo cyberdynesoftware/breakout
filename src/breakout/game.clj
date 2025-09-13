@@ -72,6 +72,22 @@
       (.setComponent position (int 1) (float 0))
       (.setComponent velocity (int 1) (float (- (.y velocity)))))))
 
+(defn aabb-collision?
+  [game-object1 game-object2]
+  (let [^org.joml.Vector3f p1 (:position game-object1)
+        ^org.joml.Vector3f s1 (:size game-object1)
+        ^org.joml.Vector3f p2 (:position game-object2)
+        ^org.joml.Vector3f s2 (:size game-object2)]
+    (and (and (>= (+ (.x p1) (.x s1)) (.x p2))
+              (>= (+ (.x p2) (.x s2)) (.x p1)))
+         (and (>= (+ (.y p1) (.y s1)) (.y p2))
+              (>= (+ (.y p2) (.y s2)) (.y p1))))))
+
+(defn check-collisions
+  [game]
+  (update-in game [:world :bricks]
+             (fn [bricks] (filter #(not (aabb-collision? (:ball game) %)) bricks))))
+
 (defn update-game
   [game delta]
   (let [paddle-width (.x ^org.joml.Vector3f (get-in game [:paddle :size]))
@@ -84,7 +100,8 @@
       (.setComponent ^org.joml.Vector3f (:position ball)
                      (int 0)
                      (float (+ (.x ^org.joml.Vector3f (get-in game [:paddle :position])) (- (/ paddle-width 2) (:radius ball)))))
-      (move-ball ball delta world-width))))
+      (move-ball ball delta world-width)))
+  (check-collisions game))
 
 (def model (new Matrix4f))
 

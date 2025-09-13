@@ -36,22 +36,20 @@
 
 (defn game-loop
   [window game]
-  (let [last-frame (volatile! (GLFW/glfwGetTime))]
-    (while (not (GLFW/glfwWindowShouldClose window))
-      (let [now (GLFW/glfwGetTime)
-            delta (- now @last-frame)]
-        (vreset! last-frame now)
-        (GLFW/glfwPollEvents)
+  (loop [last-frame (GLFW/glfwGetTime)
+         game game]
+    (let [now (GLFW/glfwGetTime)
+          delta (- now last-frame)]
+      (GLFW/glfwPollEvents)
+      (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
+      (GL33/glClear GL33/GL_COLOR_BUFFER_BIT)
 
-        (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
-        (GL33/glClear GL33/GL_COLOR_BUFFER_BIT)
+      (game/draw game delta)
+      (error/check-error)
 
-        (game/update-game game delta)
-        (game/draw game delta)
-
-        (error/check-error)
-
-        (GLFW/glfwSwapBuffers window)))))
+      (GLFW/glfwSwapBuffers window)
+      (when (not (GLFW/glfwWindowShouldClose window))
+        (recur now (game/update-game game delta))))))
 
 (defn destroy
   []
