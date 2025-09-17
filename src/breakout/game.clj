@@ -113,6 +113,26 @@
         distance (.sub ball-center closest)]
     (< (.length distance) radius)))
 
+(def directions
+  {:north (vector3f 0 1 0)
+   :east (vector3f 1 0 0)
+   :south (vector3f 0 -1 0)
+   :west (vector3f -1 0 0)})
+
+(def ^org.joml.Vector3f dir-vec-temp (new Vector3f))
+
+(defn vector-direction
+  [^org.joml.Vector3f dir-vec]
+  (let [^org.joml.Vector3f dir-vec (.normalize dir-vec dir-vec-temp)]
+    (:direction
+      (reduce (fn [previous dir-key]
+                (let [dot-product (.dot dir-vec (get directions dir-key))]
+                  (if (> dot-product (:value previous))
+                    {:direction dir-key :value dot-product}
+                    previous)))
+              {:direction nil :value -1}
+              (keys directions)))))
+
 (defn check-collisions
   [game]
   (update-in game [:world :bricks]
@@ -131,7 +151,8 @@
     (if (:ball-stuck @input/controls)
       (.setComponent ^org.joml.Vector3f (:position ball)
                      (int 0)
-                     (float (+ (.x ^org.joml.Vector3f (get-in game [:paddle :position])) (- (/ paddle-width 2) (:radius ball)))))
+                     (float (+ (.x ^org.joml.Vector3f (get-in game [:paddle :position]))
+                               (- (/ paddle-width 2) (:radius ball)))))
       (move-ball ball delta world-width)))
   (check-collisions game))
 
