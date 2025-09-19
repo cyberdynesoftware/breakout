@@ -1,6 +1,7 @@
 (ns breakout.game
   (:require [breakout.resource-manager :as rm]
             [breakout.world :as world]
+            [breakout.collision :as collision]
             [util.shader :as shader]
             [util.sprite :as sprite]
             [breakout.input :as input])
@@ -72,73 +73,59 @@
       (.setComponent position (int 1) (float 0))
       (.setComponent velocity (int 1) (float (- (.y velocity)))))))
 
-(defn aabb-collision?
-  [game-object1 game-object2]
-  (let [^org.joml.Vector3f p1 (:position game-object1)
-        ^org.joml.Vector3f s1 (:size game-object1)
-        ^org.joml.Vector3f p2 (:position game-object2)
-        ^org.joml.Vector3f s2 (:size game-object2)]
-    (and (and (>= (+ (.x p1) (.x s1)) (.x p2))
-              (>= (+ (.x p2) (.x s2)) (.x p1)))
-         (and (>= (+ (.y p1) (.y s1)) (.y p2))
-              (>= (+ (.y p2) (.y s2)) (.y p1))))))
-
-(def ball-center (new Vector3f))
-(def ^org.joml.Vector3f brick-half-size (new Vector3f))
-(def brick-center (new Vector3f))
-(def center-distance (new Vector3f))
-(def clamped (new Vector3f))
-
-(defn clamp
+(defn update-component
   [^org.joml.Vector3f value
-   ^org.joml.Vector3f clamp-value
-   ^org.joml.Vector3f dest]
-  (.set dest
-        (org.joml.Math/clamp (float (- (.x clamp-value))) (.x clamp-value) (.x value))
-        (org.joml.Math/clamp (float (- (.y clamp-value))) (.y clamp-value) (.y value))
-        (org.joml.Math/clamp (float (- (.z clamp-value))) (.z clamp-value) (.z value))))
+   component
+   fun]
+  (let [index (condp = component
+                :x 0
+                :y 1
+                nil)]
+    (.setComponent value (int index) (float (fun (.get value (int index)))))))
 
-(defn ball-collision?
-  [ball brick]
-  (let [^org.joml.Vector3f ball-pos (:position ball)
-        ^org.joml.Vector3f brick-pos (:position brick)
-        ^org.joml.Vector3f brick-size (:size brick)
-        radius (float (:radius ball))
-        ball-center (.add ball-pos radius radius (float 0) ball-center)
-        brick-half-size (.div brick-size (float 2) brick-half-size)
-        brick-center (.add brick-pos brick-half-size brick-center)
-        center-distance (.sub ball-center brick-center center-distance)
-        clamped (clamp center-distance brick-half-size clamped)
-        closest (.add brick-center clamped)
-        distance (.sub ball-center closest)]
-    (< (.length distance) radius)))
+(defn penetration
+  [^org.joml.Vector3f value
+   component
+   radius]
+  (let [index (condp = component
+                :x 0
+                :y 1
+                nil)]
+    (- radius (java.lang.Math/abs (.get value (int index))))))
 
-(def directions
-  {:north (vector3f 0 1 0)
-   :east (vector3f 1 0 0)
-   :south (vector3f 0 -1 0)
-   :west (vector3f -1 0 0)})
-
-(def ^org.joml.Vector3f dir-vec-temp (new Vector3f))
-
-(defn vector-direction
-  [^org.joml.Vector3f dir-vec]
-  (let [^org.joml.Vector3f dir-vec (.normalize dir-vec dir-vec-temp)]
-    (:direction
-      (reduce (fn [previous dir-key]
-                (let [dot-product (.dot dir-vec (get directions dir-key))]
-                  (if (> dot-product (:value previous))
-                    {:direction dir-key :value dot-product}
-                    previous)))
-              {:direction nil :value -1}
-              (keys directions)))))
-
-(defn check-collisions
+(defn check-collision
   [game]
-  (update-in game [:world :bricks]
+  (let [ball (:ball game)]
+    (doseq [brick (get-in game [:world :solid-bricks])]
+      (let [result (collision/ball-collision? ball brick)]
+        (when (:collision? result)
+          (println (:distance result))
+          (println (collision/vector-direction (:distance result)))
+          (condp = (collision/vector-direction (:distance result))
+            :north (do 
+                     (update-component (:velocity ball) :y -)
+                     (update-component (:position ball) :y #(- % (penetration (:distance result) :y (:radius ball)))))
+            :south (do 
+                     (update-component (:velocity ball) :y -)
+                     (update-component (:position ball) :y #(+ % (penetration (:distance result) :y (:radius ball)))))
+            :west (do 
+                    (update-component (:velocity ball) :x -)
+                    (update-component (:position ball) :x #(+ % (penetration (:distance result) :x (:radius ball)))))
+            :east (do 
+                    (update-component (:velocity ball) :x -)
+                    (update-component (:position ball) :x #(- % (penetration (:distance result) :x (:radius ball))))))))))
+
+  (update-in game
+             [:world :bricks]
              (fn [bricks]
-               (filter #(not (ball-collision? (:ball game) %))
+               (filter #(let [result (collision/ball-collision? (:ball game) %)]
+                          (if (:collision? result)
+                            (do
+                              ;(println (collision/vector-direction (:distance result)))
+                              false)
+                            true))
                        bricks))))
+
 
 (defn update-game
   [game delta]
@@ -154,7 +141,7 @@
                      (float (+ (.x ^org.joml.Vector3f (get-in game [:paddle :position]))
                                (- (/ paddle-width 2) (:radius ball)))))
       (move-ball ball delta world-width)))
-  (check-collisions game))
+  (check-collision game))
 
 (def model (new Matrix4f))
 
