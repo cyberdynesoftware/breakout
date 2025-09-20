@@ -38,6 +38,22 @@
             :size (vector3f 25 25 1)
             :color (vector3f 1 1 1)}}))
 
+(defn reset
+  [game]
+  (reset! input/controls input/default)
+  (let [width (get-in game [:world :size :width])
+        height (get-in game [:world :size :height])]
+    (-> game
+        (assoc :ball {:radius 12.5
+                      :velocity (vector3f 100 -350 0)
+                      :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
+                      :size (vector3f 25 25 1)
+                      :color (vector3f 1 1 1)})
+        (assoc :paddle {:position (vector3f (- (/ width 2) 50) (- height 20) 0)
+                        :size (vector3f 100 20 1)
+                        :color (vector3f 1 1 1)})
+        (assoc :world (world/init (get-in game [:resources :standard-lvl]) width height)))))
+
 (defn move-paddle
   [paddle delta right-limit]
   (let [velocity (float (* 500 delta))
@@ -76,22 +92,50 @@
 (defn update-component
   [^org.joml.Vector3f value
    component
-   fun]
-  (let [index (condp = component
-                :x 0
-                :y 1
-                nil)]
-    (.setComponent value (int index) (float (fun (.get value (int index)))))))
+   op]
+  (.setComponent value component (float (op (.get value ^int component)))))
 
 (defn penetration
   [^org.joml.Vector3f value
    component
    radius]
-  (let [index (condp = component
-                :x 0
-                :y 1
-                nil)]
-    (- radius (java.lang.Math/abs (.get value (int index))))))
+  (- radius (java.lang.Math/abs (.get value ^int component))))
+
+(defn collision-resolution
+  [ball distance]
+  (let [direction (collision/vector-direction distance)
+        params (condp = direction
+                 :north {:component 1 :op +}
+                 :south {:component 1 :op -}
+                 :west {:component 0 :op +}
+                 :east {:component 0 :op -}
+                 (println "WARNING: distance is 0x0"))]
+    (when params
+      (update-component (:velocity ball) (:component params) -)
+      ;(update-component (:position ball) (:component params) #((:op params) % (penetration distance (:component params) (:radius ball)))))))
+      )))
+
+(defn resolve-paddle-collision
+  [ball paddle]
+  (let [^org.joml.Vector3f paddle-pos (:position paddle)
+        ^org.joml.Vector3f paddle-size (:size paddle)
+        ^org.joml.Vector3f ball-pos (:position ball)
+        ^org.joml.Vector3f ball-velocity (:velocity ball)
+        paddle-center (+ (.x paddle-pos) (/ (.x paddle-size) 2))
+        distance (- (+ (.x ball-pos) (:radius ball)) paddle-center)
+        percentage (/ distance (/ (.x paddle-size) 2))
+        speed (.length ball-velocity)]
+    (.setComponent ball-velocity (int 0) (float (* percentage 200)))
+    (.setComponent ball-velocity (int 1) (float (- (java.lang.Math/abs (.get ball-velocity (int 1))))))
+    (.normalize ball-velocity)
+    (.mul ball-velocity speed)))
+
+(defn check-game-over
+  [game]
+  (let [^org.joml.Vector3f ball-pos (get-in game [:ball :position])]
+    (if (>= (.y ball-pos) (get-in game [:world :size :height]))
+      (reset game)
+      game)))
 
 (defn check-collision
   [game]
@@ -99,33 +143,21 @@
     (doseq [brick (get-in game [:world :solid-bricks])]
       (let [result (collision/ball-collision? ball brick)]
         (when (:collision? result)
-          (println (:distance result))
-          (println (collision/vector-direction (:distance result)))
-          (condp = (collision/vector-direction (:distance result))
-            :north (do 
-                     (update-component (:velocity ball) :y -)
-                     (update-component (:position ball) :y #(- % (penetration (:distance result) :y (:radius ball)))))
-            :south (do 
-                     (update-component (:velocity ball) :y -)
-                     (update-component (:position ball) :y #(+ % (penetration (:distance result) :y (:radius ball)))))
-            :west (do 
-                    (update-component (:velocity ball) :x -)
-                    (update-component (:position ball) :x #(+ % (penetration (:distance result) :x (:radius ball)))))
-            :east (do 
-                    (update-component (:velocity ball) :x -)
-                    (update-component (:position ball) :x #(- % (penetration (:distance result) :x (:radius ball))))))))))
+          (collision-resolution ball (:distance result)))))
 
-  (update-in game
-             [:world :bricks]
-             (fn [bricks]
-               (filter #(let [result (collision/ball-collision? (:ball game) %)]
-                          (if (:collision? result)
-                            (do
-                              ;(println (collision/vector-direction (:distance result)))
-                              false)
-                            true))
-                       bricks))))
+    (let [result (collision/ball-collision? ball (:paddle game))]
+      (when (:collision? result)
+        (resolve-paddle-collision ball (:paddle game))))
 
+    (-> game
+        (update-in [:world :bricks]
+                   (fn [bricks]
+                     (filter #(let [result (collision/ball-collision? ball %)]
+                                (when (:collision? result)
+                                  (collision-resolution ball (:distance result)))
+                                (not (:collision? result)))
+                             bricks)))
+        (check-game-over))))
 
 (defn update-game
   [game delta]
