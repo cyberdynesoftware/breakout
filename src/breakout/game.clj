@@ -2,6 +2,8 @@
   (:require [breakout.resource-manager :as rm]
             [breakout.world :as world]
             [breakout.collision :as collision]
+            [breakout.particle :as particle]
+            [breakout.game-object :as game-object]
             [util.shader :as shader]
             [util.sprite :as sprite]
             [breakout.input :as input])
