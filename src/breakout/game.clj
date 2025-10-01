@@ -16,6 +16,12 @@
   [x y z]
   (new Vector3f (float x) (float y) (float z)))
 
+(defn init-shader
+  [shader projection image]
+  (GL33/glUseProgram shader)
+  (shader/load-matrix shader "projection" projection)
+  (shader/load-int shader "image" image))
+
 (defn init
   [width height]
   (let [resources (rm/init)
@@ -23,9 +29,8 @@
                      (.ortho2D (float 0) (float width) (float height) (float 0)))
         vertices (sprite/vertices)]
     (reset! input/controls input/default)
-    (GL33/glUseProgram (:sprite-shader resources))
-    (shader/load-matrix (:sprite-shader resources) "projection" projection)
-    (shader/load-int (:sprite-shader resources) "image" 0)
+    (init-shader (:sprite-shader resources) projection 0)
+    (init-shader (:particle-shader resources) projection 0)
     {:resources (assoc resources :vertices vertices)
      :background {:position (vector3f 0 0 0)
                   :size (vector3f width height 1)
@@ -193,17 +198,14 @@
   [obj shader]
   (sprite/transform model (:position obj) (:size obj))
   (shader/load-matrix shader "model" model)
-
   (shader/load-vector3 shader "spriteColor" (:color obj))
   (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6))
 
 (defn draw-particle
   [particle shader]
-  (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE)
   (shader/load-vector3 shader "offset" (:position particle))
   (shader/load-vector3 shader "color" (:color particle))
-  (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6)
-  (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE_MINUS_SRC_ALPHA))
+  (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6))
 
 (defn draw
   [game delta]
@@ -226,9 +228,13 @@
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :paddle]))
     (draw-game-object (:paddle game) shader)
 
+    (GL33/glUseProgram (get-in game [:resources :particle-shader]))
+    (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :particle]))
-    (doseq [particle (get-in game [:world :particles])]
-      (draw-particle particle shader))
+    (doseq [particle (:particles game)]
+      (draw-particle particle (get-in game [:resources :particle-shader])))
+    (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE_MINUS_SRC_ALPHA)
 
+    (GL33/glUseProgram shader)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :face]))
     (draw-game-object (:ball game) shader)))
