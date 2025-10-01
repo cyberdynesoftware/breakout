@@ -15,4 +15,5 @@
    :brick (tex/load-image "resources/assets/block.png")
    :solid-brick (tex/load-image "resources/assets/block_solid.png")
    :paddle (tex/load-image "resources/assets/paddle.png")
+   :particle (tex/load-image "resources/assets/particle.png")
    :standard-lvl (slurp "resources/levels/standard.lvl")})

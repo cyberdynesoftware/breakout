@@ -15,3 +15,26 @@
                                        :color (game-object/vector3f rcolor rcolor rcolor)})
         (assoc :velocity (.mul velocity (float 0.1)))
         (assoc :life 1))))
+
+(def ^org.joml.Vector3f temp-vec (new Vector3f))
+
+(defn color-progress
+  [^org.joml.Vector3f color
+   delta]
+  (let [value (float (* delta 2.5))]
+    (.sub color (.set temp-vec value value value))))
+
+(defn move-particle
+  [^org.joml.Vector3f position
+   ^org.joml.Vector3f velocity
+   delta]
+  (.sub position (.mul velocity (float delta) temp-vec)))
+
+(defn update-particles
+  [particles delta]
+  (->> particles
+       (map (fn [particle] (update particle :life - delta)))
+       (filter #(> (:life %) 0))
+       (map (fn [particle] (-> particle
+                               (update :position move-particle (:velocity particle) delta)
+                               (update :color color-progress delta)))))) 
