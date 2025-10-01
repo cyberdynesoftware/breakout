@@ -5,7 +5,7 @@
 (set! *warn-on-reflection* true)
 
 (defn create-particle
-  [ball offset]
+  [ball]
   (let [random (- (rand 10) 5)
         rcolor (+ (rand) 0.5)
         value (+ (/ (:radius ball) 2) random)

@@ -2,7 +2,7 @@
   (:require [breakout.resource-manager :as rm]
             [breakout.world :as world]
             [breakout.collision :as collision]
-            [breakout.particle :as particle]
+            [breakout.particle :as emitter]
             [breakout.game-object :as game-object]
             [util.shader :as shader]
             [util.sprite :as sprite]
@@ -38,7 +38,8 @@
             :velocity (vector3f 100 -350 0)
             :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
             :size (vector3f 25 25 1)
-            :color (vector3f 1 1 1)}}))
+            :color (vector3f 1 1 1)}
+     :particles []}))
 
 (defn reset
   [game]
@@ -161,6 +162,13 @@
                              bricks)))
         (check-game-over))))
 
+(defn update-particles
+  [particles ball delta]
+  (-> particles
+      (conj (emitter/create-particle ball))
+      (conj (emitter/create-particle ball))
+      (emitter/update-particles delta)))
+
 (defn update-game
   [game delta]
   (let [paddle-width (.x ^org.joml.Vector3f (get-in game [:paddle :size]))
@@ -174,8 +182,10 @@
                      (int 0)
                      (float (+ (.x ^org.joml.Vector3f (get-in game [:paddle :position]))
                                (- (/ paddle-width 2) (:radius ball)))))
-      (move-ball ball delta world-width)))
-  (check-collision game))
+      (move-ball ball delta world-width))
+    (-> game
+        (update :particles update-particles ball delta)
+        (check-collision))))
 
 (def model (new Matrix4f))
 
@@ -186,6 +196,14 @@
 
   (shader/load-vector3 shader "spriteColor" (:color obj))
   (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6))
+
+(defn draw-particle
+  [particle shader]
+  (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE)
+  (shader/load-vector3 shader "offset" (:position particle))
+  (shader/load-vector3 shader "color" (:color particle))
+  (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6)
+  (GL33/glBlendFunc GL33/GL_SRC_ALPHA GL33/GL_ONE_MINUS_SRC_ALPHA))
 
 (defn draw
   [game delta]
@@ -207,6 +225,10 @@
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :paddle]))
     (draw-game-object (:paddle game) shader)
+
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :particle]))
+    (doseq [particle (get-in game [:world :particles])]
+      (draw-particle particle shader))
 
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :face]))
     (draw-game-object (:ball game) shader)))
