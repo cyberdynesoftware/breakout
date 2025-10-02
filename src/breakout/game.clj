@@ -3,7 +3,7 @@
             [breakout.world :as world]
             [breakout.collision :as collision]
             [breakout.particle :as emitter]
-            [breakout.game-object :as game-object]
+            [breakout.game-object :refer :all]
             [util.shader :as shader]
             [util.sprite :as sprite]
             [breakout.input :as input])
@@ -12,9 +12,19 @@
 
 (set! *warn-on-reflection* true)
 
-(defn vector3f
-  [x y z]
-  (new Vector3f (float x) (float y) (float z)))
+(defn reset
+  [game width height]
+  (reset! input/controls input/default)
+  (-> game
+      (assoc :ball (-> (map->game-object {:position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
+                                          :size (vector3f 25 25 1)
+                                          :color (vector3f 1 1 1)})
+                       (assoc :radius 12.5)
+                       (assoc :velocity (vector3f 100 -350 0))))
+      (assoc :paddle (map->game-object {:position (vector3f (- (/ width 2) 50) (- height 20) 0)
+                                        :size (vector3f 100 20 1)
+                                        :color (vector3f 1 1 1)}))
+      (assoc :world (world/init (get-in game [:resources :standard-lvl]) width height))))
 
 (defn init-shader
   [shader projection image]
@@ -27,40 +37,14 @@
   (let [resources (rm/init)
         projection (doto (new Matrix4f)
                      (.ortho2D (float 0) (float width) (float height) (float 0)))
-        vertices (sprite/vertices)]
-    (reset! input/controls input/default)
+        game {:resources (assoc resources :vertices (sprite/vertices))
+              :background (map->game-object {:position (vector3f 0 0 0)
+                                             :size (vector3f width height 1)
+                                             :color (vector3f 1 1 1)})
+              :particles []}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
-    {:resources (assoc resources :vertices vertices)
-     :background {:position (vector3f 0 0 0)
-                  :size (vector3f width height 1)
-                  :color (vector3f 1 1 1)}
-     :world (world/init (:standard-lvl resources) width height)
-     :paddle {:position (vector3f (- (/ width 2) 50) (- height 20) 0)
-              :size (vector3f 100 20 1)
-              :color (vector3f 1 1 1)}
-     :ball {:radius 12.5
-            :velocity (vector3f 100 -350 0)
-            :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
-            :size (vector3f 25 25 1)
-            :color (vector3f 1 1 1)}
-     :particles []}))
-
-(defn reset
-  [game]
-  (reset! input/controls input/default)
-  (let [width (get-in game [:world :size :width])
-        height (get-in game [:world :size :height])]
-    (-> game
-        (assoc :ball {:radius 12.5
-                      :velocity (vector3f 100 -350 0)
-                      :position (vector3f (- (/ width 2) 12.5) (- height 20 25) 0)
-                      :size (vector3f 25 25 1)
-                      :color (vector3f 1 1 1)})
-        (assoc :paddle {:position (vector3f (- (/ width 2) 50) (- height 20) 0)
-                        :size (vector3f 100 20 1)
-                        :color (vector3f 1 1 1)})
-        (assoc :world (world/init (get-in game [:resources :standard-lvl]) width height)))))
+    (reset game width height)))
 
 (defn move-paddle
   [paddle delta right-limit]
@@ -119,9 +103,7 @@
                  :east {:component 0 :op -}
                  (println "WARNING: distance is 0x0"))]
     (when params
-      (update-component (:velocity ball) (:component params) -)
-      ;(update-component (:position ball) (:component params) #((:op params) % (penetration distance (:component params) (:radius ball)))))))
-      )))
+      (update-component (:velocity ball) (:component params) -))))
 
 (defn resolve-paddle-collision
   [ball paddle]
@@ -140,9 +122,10 @@
 
 (defn check-game-over
   [game]
-  (let [^org.joml.Vector3f ball-pos (get-in game [:ball :position])]
-    (if (>= (.y ball-pos) (get-in game [:world :size :height]))
-      (reset game)
+  (let [^org.joml.Vector3f ball-pos (get-in game [:ball :position])
+        size (get-in game [:world :size])]
+    (if (>= (.y ball-pos) (:height size))
+      (reset game (:width size) (:height size))
       game)))
 
 (defn check-collision

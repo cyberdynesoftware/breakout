@@ -3,7 +3,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defrecord game-object [position color])
+(defrecord game-object [position size color])
 
 (defn vector3f
   [x y z]

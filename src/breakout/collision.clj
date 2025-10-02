@@ -1,9 +1,8 @@
 (ns breakout.collision
+  (:require [breakout.game-object :refer :all])
   (:import [org.joml Vector3f]))
 
-(defn vector3f
-  [x y z]
-  (new Vector3f (float x) (float y) (float z)))
+(set! *warn-on-reflection* true)
 
 (defn aabb-collision?
   [game-object1 game-object2]
@@ -44,9 +43,6 @@
         clamped (clamp center-distance brick-half-size clamped)
         closest (.add brick-center clamped)
         distance (.sub ball-center closest)]
-    ;(println "=")
-    ;(println (format "ball-pos: %f %f" (.x ball-pos) (.y ball-pos)))
-    ;(println (format "closest: %f %f" (.x closest) (.y closest)))
     {:collision? (< (.length distance) radius)
      :distance distance}))
 
