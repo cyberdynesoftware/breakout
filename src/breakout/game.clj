@@ -6,7 +6,8 @@
             [breakout.game-object :refer :all]
             [util.shader :as shader]
             [util.sprite :as sprite]
-            [breakout.input :as input])
+            [breakout.input :as input]
+            [breakout.fx :as fx])
   (:import [org.joml Matrix4f Vector3f]
            [org.lwjgl.opengl GL33]))
 
@@ -44,6 +45,7 @@
               :particles []}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
+    (fx/init-shader (:fx-shader resources))
     (reset game width height)))
 
 (defn move-paddle

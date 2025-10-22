@@ -10,6 +10,8 @@
                                                 (slurp "resources/shader/sprite.frag"))
    :particle-shader (shader/create-shader-program (slurp "resources/shader/particle.vert")
                                                   (slurp "resources/shader/particle.frag"))
+   :fx-shader (shader/create-shader-program (slurp "resources/shader/fx.vert")
+                                            (slurp "resources/shader/fx.frag"))
    :face (tex/load-image "resources/assets/awesomeface.png")
    :background (tex/load-image "resources/assets/background.jpg")
    :brick (tex/load-image "resources/assets/block.png")
