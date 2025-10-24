@@ -42,7 +42,8 @@
               :background (map->game-object {:position (vector3f 0 0 0)
                                              :size (vector3f width height 1)
                                              :color (vector3f 1 1 1)})
-              :particles []}]
+              :particles []
+              :framebuffer (fx/init-framebuffer width height)}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
     (fx/init-shader (:fx-shader resources))
