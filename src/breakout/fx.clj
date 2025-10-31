@@ -1,6 +1,8 @@
 (ns breakout.fx
-  (:require [util.shader :as shader])
-  (:import [org.lwjgl.opengl GL33]))
+  (:require [util.shader :as shader]
+            [util.sprite :as sprite])
+  (:import [org.lwjgl.opengl GL33]
+           [org.lwjgl BufferUtils]))
 
 (set! *warn-on-reflection* true)
 
@@ -42,6 +44,16 @@
   (GL33/glUniform1iv ^int (location shader "edge_kernel") ^ints edge-kernel)
   (GL33/glUniform1fv ^int (location shader "blur_kernel") ^floats blur-kernel))
 
+(def ^java.nio.FloatBuffer vertex-buffer
+  (doto (BufferUtils/createFloatBuffer 24)
+    (.put (float-array [-1 -1 0 0]))
+    (.put (float-array [1 1 1 1]))
+    (.put (float-array [-1 1 0 1]))
+    (.put (float-array [-1 -1 0 0]))
+    (.put (float-array [1 -1 1 0]))
+    (.put (float-array [1 1 1 1]))
+    (.flip)))
+
 (defn gen-texture
   [width height]
   (let [tex (GL33/glGenTextures)]
@@ -63,9 +75,11 @@
 
 (defn init-framebuffer
   [width height]
-  (let [fb {:msvbo (GL33/glGenFramebuffers)
-            :vbo (GL33/glGenFramebuffers)
+  (let [fb {:dimen {:widht width :height height}
+            :msvbo (GL33/glGenFramebuffers)
+            :fbo (GL33/glGenFramebuffers)
             :rbo (GL33/glGenRenderbuffers)
+            :vao (sprite/init-quad vertex-buffer)
             :texture (gen-texture width height)}]
     (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER (:msvbo fb))
     (GL33/glBindRenderbuffer GL33/GL_RENDERBUFFER (:rbo fb))
@@ -76,7 +90,7 @@
     (when (not= (GL33/glCheckFramebufferStatus GL33/GL_FRAMEBUFFER) GL33/GL_FRAMEBUFFER_COMPLETE)
       (println "ERROR: fx: Failed to init msvbo"))
 
-    (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER (:vbo fb))
+    (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER (:fbo fb))
     (GL33/glFramebufferTexture2D GL33/GL_FRAMEBUFFER GL33/GL_COLOR_ATTACHMENT0 GL33/GL_TEXTURE_2D (:texture fb) 0)
 
     (when (not= (GL33/glCheckFramebufferStatus GL33/GL_FRAMEBUFFER) GL33/GL_FRAMEBUFFER_COMPLETE)
@@ -84,3 +98,32 @@
 
     (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)
     fb))
+
+(defn begin-render
+  [fb]
+  (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER (:msvbo fb))
+  (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
+  (GL33/glClear GL33/GL_COLOR_BUFFER_BIT))
+
+(defn render
+  [shader fb pack]
+  (GL33/glUseProgram shader)
+  (shader/load-float1 shader "time" (:time pack))
+  (shader/load-int shader "confuse" (:confuse pack))
+  (shader/load-int shader "chaos" (:chaos pack))
+  (shader/load-int shader "shake" (:shake pack))
+
+  (GL33/glActiveTexture GL33/GL_TEXTURE0)
+  (GL33/glBindTexture GL33/GL_TEXTURE_2D (:texture fb))
+  (GL33/glBindVertexArray (:vao fb))
+  (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6)
+  (GL33/glBindVertexArray 0))
+
+(defn end-render
+  [fb]
+  (let [width (get-in fb [:dimen :width])
+        height (get-in fb [:dimen :height])]
+    (GL33/glBindFramebuffer GL33/GL_READ_FRAMEBUFFER (:msvbo fb))
+    (GL33/glBindFramebuffer GL33/GL_DRAW_FRAMEBUFFER (:fbo fb))
+    (GL33/glBlitFramebuffer 0 0 width height 0 0 width height GL33/GL_COLOR_BUFFER_BIT GL33/GL_NEAREST)
+    (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)))

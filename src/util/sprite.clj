@@ -16,8 +16,8 @@
     (.put (float-array [1 0 1 0]))
     (.flip)))
 
-(defn vertices
-  []
+(defn init-quad
+  [^java.nio.FloatBuffer vertex-buffer]
   (let [vao (GL33/glGenVertexArrays)
         vbo (GL33/glGenBuffers)]
     (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)

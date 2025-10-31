@@ -38,7 +38,7 @@
   (let [resources (rm/init)
         projection (doto (new Matrix4f)
                      (.ortho2D (float 0) (float width) (float height) (float 0)))
-        game {:resources (assoc resources :vertices (sprite/vertices))
+        game {:resources (assoc resources :vertices (sprite/init-quad sprite/vertex-buffer))
               :background (map->game-object {:position (vector3f 0 0 0)
                                              :size (vector3f width height 1)
                                              :color (vector3f 1 1 1)})
