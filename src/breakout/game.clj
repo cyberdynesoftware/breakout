@@ -43,7 +43,8 @@
                                              :size (vector3f width height 1)
                                              :color (vector3f 1 1 1)})
               :particles []
-              :framebuffer (fx/init-framebuffer width height)}]
+              :framebuffer (fx/init-framebuffer width height)
+              :effects {:shake 0 :chaos 0 :confuse 0}}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
     (fx/init-shader (:fx-shader resources))
@@ -134,16 +135,22 @@
 (defn check-collision
   [game]
   (let [ball (:ball game)]
-    (doseq [brick (get-in game [:world :solid-bricks])]
-      (let [result (collision/ball-collision? ball brick)]
-        (when (:collision? result)
-          (collision-resolution ball (:distance result)))))
-
     (let [result (collision/ball-collision? ball (:paddle game))]
       (when (:collision? result)
         (resolve-paddle-collision ball (:paddle game))))
 
     (-> game
+        (update-in [:effects :shake]
+                   (fn [shake-time]
+                     (if (some (fn [brick]
+                                 (let [result (collision/ball-collision? ball brick)]
+                                   (when (:collision? result)
+                                     (collision-resolution ball (:distance result)))
+                                   (:collision? result)))
+                               (get-in game [:world :solid-bricks]))
+                       0.05
+                       shake-time)))
+
         (update-in [:world :bricks]
                    (fn [bricks]
                      (filter #(let [result (collision/ball-collision? ball %)]
@@ -176,6 +183,12 @@
       (move-ball ball delta world-width))
     (-> game
         (update :particles update-particles ball delta)
+        (update-in [:effects :shake]
+                   (fn [shake-time]
+                     (let [new-time (- shake-time delta)]
+                       (if (< new-time 0)
+                         new-time
+                         0))))
         (check-collision))))
 
 (def model (new Matrix4f))
@@ -193,7 +206,7 @@
   (shader/load-vector3 shader "color" (:color particle))
   (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6))
 
-(defn draw
+(defn draw-game
   [game delta]
   (let [shader (get-in game [:resources :sprite-shader])]
     (GL33/glUseProgram shader)
@@ -224,3 +237,13 @@
     (GL33/glUseProgram shader)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (get-in game [:resources :face]))
     (draw-game-object (:ball game) shader)))
+
+(defn draw
+  [game delta]
+  (fx/begin-render (:framebuffer game))
+  (draw-game game delta)
+  (fx/end-render (:framebuffer game))
+  (fx/render (get-in game [:resources :fx-shader])
+             (:framebuffer game)
+             delta
+             (:effects game)))
