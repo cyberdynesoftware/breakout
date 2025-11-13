@@ -94,7 +94,7 @@
     (GL33/glFramebufferTexture2D GL33/GL_FRAMEBUFFER GL33/GL_COLOR_ATTACHMENT0 GL33/GL_TEXTURE_2D (:texture fb) 0)
 
     (when (not= (GL33/glCheckFramebufferStatus GL33/GL_FRAMEBUFFER) GL33/GL_FRAMEBUFFER_COMPLETE)
-      (println "ERROR: fx: Failed to init vbo"))
+      (println "ERROR: fx: Failed to init fbo"))
 
     (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)
     fb))
@@ -104,6 +104,18 @@
   (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER (:msfbo fb))
   (GL33/glClearColor (float 0) (float 0) (float 0) (float 1))
   (GL33/glClear GL33/GL_COLOR_BUFFER_BIT))
+
+(defn end-render
+  [fb]
+  (let [width (get-in fb [:dimen :width])
+        height (get-in fb [:dimen :height])
+        msfbo (:msfbo fb)
+        fbo (:fbo fb)]
+    (println fb)
+    (GL33/glBindFramebuffer GL33/GL_READ_FRAMEBUFFER msfbo)
+    (GL33/glBindFramebuffer GL33/GL_DRAW_FRAMEBUFFER fbo)
+    (GL33/glBlitFramebuffer 0 0 width height 0 0 width height GL33/GL_COLOR_BUFFER_BIT GL33/GL_NEAREST)
+    (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)))
 
 (defn render
   [shader fb delta effects]
@@ -118,12 +130,3 @@
   (GL33/glBindVertexArray (:vao fb))
   (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6)
   (GL33/glBindVertexArray 0))
-
-(defn end-render
-  [fb]
-  (let [width (get-in fb [:dimen :width])
-        height (get-in fb [:dimen :height])]
-    (GL33/glBindFramebuffer GL33/GL_READ_FRAMEBUFFER (:msfbo fb))
-    (GL33/glBindFramebuffer GL33/GL_DRAW_FRAMEBUFFER (:fbo fb))
-    (GL33/glBlitFramebuffer 0 0 width height 0 0 width height GL33/GL_COLOR_BUFFER_BIT GL33/GL_NEAREST)
-    (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)))
