@@ -187,8 +187,8 @@
                    (fn [shake-time]
                      (let [new-time (- shake-time delta)]
                        (if (< new-time 0)
-                         new-time
-                         0))))
+                         0
+                         new-time))))
         (check-collision))))
 
 (def model (new Matrix4f))

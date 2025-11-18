@@ -75,7 +75,7 @@
 
 (defn init-framebuffer
   [width height]
-  (let [fb {:dimen {:widht width :height height}
+  (let [fb {:dimen {:width width :height height}
             :msfbo (GL33/glGenFramebuffers)
             :fbo (GL33/glGenFramebuffers)
             :rbo (GL33/glGenRenderbuffers)
@@ -108,12 +108,9 @@
 (defn end-render
   [fb]
   (let [width (get-in fb [:dimen :width])
-        height (get-in fb [:dimen :height])
-        msfbo (:msfbo fb)
-        fbo (:fbo fb)]
-    (println fb)
-    (GL33/glBindFramebuffer GL33/GL_READ_FRAMEBUFFER msfbo)
-    (GL33/glBindFramebuffer GL33/GL_DRAW_FRAMEBUFFER fbo)
+        height (get-in fb [:dimen :height])]
+    (GL33/glBindFramebuffer GL33/GL_READ_FRAMEBUFFER (:msfbo fb))
+    (GL33/glBindFramebuffer GL33/GL_DRAW_FRAMEBUFFER (:fbo fb))
     (GL33/glBlitFramebuffer 0 0 width height 0 0 width height GL33/GL_COLOR_BUFFER_BIT GL33/GL_NEAREST)
     (GL33/glBindFramebuffer GL33/GL_FRAMEBUFFER 0)))
 
@@ -123,7 +120,7 @@
   (shader/load-float1 shader "time" delta)
   (shader/load-int shader "confuse" (:confuse effects))
   (shader/load-int shader "chaos" (:chaos effects))
-  (shader/load-int shader "shake" (:shake effects))
+  (shader/load-int shader "shake" (if (> (:shake effects) 0) 1 0))
 
   (GL33/glActiveTexture GL33/GL_TEXTURE0)
   (GL33/glBindTexture GL33/GL_TEXTURE_2D (:texture fb))
