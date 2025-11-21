@@ -7,7 +7,8 @@
             [util.shader :as shader]
             [util.sprite :as sprite]
             [breakout.input :as input]
-            [breakout.fx :as fx])
+            [breakout.fx :as fx]
+            [breakout.powerups :as powerups])
   (:import [org.joml Matrix4f Vector3f]
            [org.lwjgl.opengl GL33]))
 
@@ -44,7 +45,8 @@
                                              :color (vector3f 1 1 1)})
               :particles []
               :framebuffer (fx/init-framebuffer width height)
-              :effects {:shake 0 :chaos 0 :confuse 0}}]
+              :effects {:shake 0 :chaos 0 :confuse 0}
+              :active-powerups []}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
     (fx/init-shader (:fx-shader resources))
