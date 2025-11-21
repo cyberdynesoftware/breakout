@@ -160,7 +160,7 @@
                                  (when (:collision? result)
                                    (collision-resolution ball (:distance result))
                                    (let [powerup (powerups/spawn-powerup brick (:resources game))]
-                                     (when powerup (append (:game powerups) powerup))))
+                                     (when powerup (append (:powerups game) powerup))))
                                  (not (:collision? result))))
                              bricks)))
         (check-game-over))))
