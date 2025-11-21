@@ -49,10 +49,12 @@
 (def ^Vector3f velocity (vector3f 0 150 0))
 (def ^Vector3f temp-vel (vector3f 0 0 0))
 
+(defn fall
+  [^Vector3f position delta ]
+  (.add position (.mul velocity (float delta) temp-vel)))
+
 (defn update-powerups
-  [powerups delta]
-  (doseq [powerup powerups]
-    (let [^Vector3f position (:position powerup)]
-      (when (:active powerup)
-        (- :duration delta))
-      (.add position (.mul velocity (float delta) temp-vel)))))
+  [powerups delta world-size]
+  (->> powerups
+       (filter #(< (.y ^Vector3f (fall (:position %) delta)) (:height world-size)))
+       (map #(update % :duration - delta))))

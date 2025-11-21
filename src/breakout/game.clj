@@ -46,7 +46,7 @@
               :particles []
               :framebuffer (fx/init-framebuffer width height)
               :effects {:shake 0 :chaos 0 :confuse 0}
-              :active-powerups []}]
+              :powerups []}]
     (init-shader (:sprite-shader resources) projection 0)
     (init-shader (:particle-shader resources) projection 0)
     (fx/init-shader (:fx-shader resources))
@@ -155,10 +155,13 @@
 
         (update-in [:world :bricks]
                    (fn [bricks]
-                     (filter #(let [result (collision/ball-collision? ball %)]
-                                (when (:collision? result)
-                                  (collision-resolution ball (:distance result)))
-                                (not (:collision? result)))
+                     (filter (fn [brick]
+                               (let [result (collision/ball-collision? ball brick)]
+                                 (when (:collision? result)
+                                   (collision-resolution ball (:distance result))
+                                   (let [powerup (powerups/spawn-powerup brick (:resources game))]
+                                     (when powerup (append (:game powerups) powerup))))
+                                 (not (:collision? result))))
                              bricks)))
         (check-game-over))))
 
@@ -191,6 +194,7 @@
                        (if (< new-time 0)
                          0
                          new-time))))
+        (update :powerups powerups/update-powerups delta (get-in game [:world :size]))
         (check-collision))))
 
 (def model (new Matrix4f))
